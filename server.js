@@ -3,7 +3,8 @@ import dotenv from "dotenv";
 import cors from "cors";
 import { createServer } from "http";
 import { Server } from "socket.io";
-import connectDB from "./src/middleware/config/db.js";
+import connectDB from "./src/config/db.js";
+import authRouter from "./src/routes/auth.route.js";
 
 // Load environment variables
 dotenv.config();
@@ -29,6 +30,9 @@ const io = new Server(httpServer, {
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// routes
+app.use("/api/auth", authRouter);
 
 // Test route
 app.get("/", (req, res) => {
