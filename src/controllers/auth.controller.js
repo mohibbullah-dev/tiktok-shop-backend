@@ -168,6 +168,31 @@ export const login = async (req, res) => {
 };
 
 // ─────────────────────────────────────────
+// @desc    Set payment password
+// @route   PUT /api/auth/payment-password
+// @access  merchant only
+// ─────────────────────────────────────────
+export const setPaymentPassword = async (req, res) => {
+  const { paymentPassword } = req.body;
+
+  if (!paymentPassword || paymentPassword.length !== 6) {
+    return res
+      .status(400)
+      .json({ message: "Payment password must be 6 digits" });
+  }
+
+  const bcrypt = await import("bcryptjs");
+  const salt = await bcrypt.default.genSalt(10);
+  const hashed = await bcrypt.default.hash(paymentPassword, salt);
+
+  await User.findByIdAndUpdate(req.user._id, {
+    paymentPassword: hashed,
+  });
+
+  res.json({ message: "Payment password set successfully" });
+};
+
+// ─────────────────────────────────────────
 // @desc    Get logged in user profile
 // @route   GET /api/auth/me
 // @access  Private

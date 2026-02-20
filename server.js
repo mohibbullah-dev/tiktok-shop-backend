@@ -4,8 +4,12 @@ import cors from "cors";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import connectDB from "./src/config/db.js";
+
+// route imports
 import authRouter from "./src/routes/auth.route.js";
 import merchantRoutes from "./src/routes/merchant.route.js";
+import rechargeRoutes from "./src/routes/recharge.route.js";
+import withdrawalRoutes from "./src/routes/withdrawal.route.js";
 
 // Load environment variables
 dotenv.config();
@@ -35,6 +39,8 @@ app.use(express.urlencoded({ extended: true }));
 // routes
 app.use("/api/auth", authRouter);
 app.use("/api/merchants", merchantRoutes);
+app.use("/api/recharge", rechargeRoutes);
+app.use("/api/withdrawal", withdrawalRoutes);
 // Test route
 app.get("/", (req, res) => {
   res.json({ message: "TikTok Shop API is running..." });
