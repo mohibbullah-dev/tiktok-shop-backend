@@ -5,6 +5,7 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import connectDB from "./src/config/db.js";
 import authRouter from "./src/routes/auth.route.js";
+import merchantRoutes from "./src/routes/merchant.route.js";
 
 // Load environment variables
 dotenv.config();
@@ -33,7 +34,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // routes
 app.use("/api/auth", authRouter);
-
+app.use("/api/merchants", merchantRoutes);
 // Test route
 app.get("/", (req, res) => {
   res.json({ message: "TikTok Shop API is running..." });
