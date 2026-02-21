@@ -9,6 +9,76 @@ export const chatEvents = (io) => {
     console.log(`Socket connected: ${socket.id}`);
 
     // ─────────────────────────────────────────
+    // Intelligent allocation — auto assign
+    // agent to waiting rooms when they connect
+    // ─────────────────────────────────────────
+    socket.on("agent_online", async ({ userId, role }) => {
+      onlineUsers.set(userId, socket.id);
+      socket.userId = userId;
+      socket.userRole = role;
+
+      // Find the user's preference
+      const user = await User.findById(userId);
+
+      // If intelligent allocation is ON, auto assign waiting rooms
+      if (user && user.intelligentAllocation) {
+        const waitingRooms = await ChatRoom.find({
+          status: "waiting",
+          assignedAgent: null,
+          isBlacklisted: false,
+        });
+
+        for (const room of waitingRooms) {
+          room.assignedAgent = userId;
+          room.status = "active";
+          room.autoAssigned = true;
+          await room.save();
+
+          // Notify the merchant their chat was picked up
+          const merchantSocketId = onlineUsers.get(
+            room.merchantUser.toString(),
+          );
+          if (merchantSocketId) {
+            io.to(merchantSocketId).emit("agent_assigned", {
+              roomId: room.roomId,
+              agentName: user.username,
+            });
+          }
+        }
+
+        // Tell the agent how many rooms were assigned
+        socket.emit("auto_assigned", {
+          count: waitingRooms.length,
+        });
+      }
+
+      // Notify others this agent is online
+      socket.broadcast.emit("agent_online", { userId, role });
+    });
+
+    // ─────────────────────────────────────────
+    // Sound notification toggle
+    // ─────────────────────────────────────────
+    socket.on("toggle_sound", async ({ enabled }) => {
+      if (socket.userId) {
+        await User.findByIdAndUpdate(socket.userId, {
+          soundEnabled: enabled,
+        });
+      }
+    });
+
+    // ─────────────────────────────────────────
+    // Intelligent allocation toggle
+    // ─────────────────────────────────────────
+    socket.on("toggle_allocation", async ({ enabled }) => {
+      if (socket.userId) {
+        await User.findByIdAndUpdate(socket.userId, {
+          intelligentAllocation: enabled,
+        });
+      }
+    });
+
+    // ─────────────────────────────────────────
     // User comes online
     // Client emits: { userId, role }
     // ─────────────────────────────────────────
