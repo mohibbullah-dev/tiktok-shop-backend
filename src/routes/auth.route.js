@@ -1,12 +1,17 @@
 import express from "express";
 import {
-  createAdmin,
-  getMe,
-  login,
   registerMerchant,
+  login,
+  logout,
+  getMe,
+  createAdmin,
   setPaymentPassword,
+  updateLanguage,
+  updateProfile,
+  changePassword,
+  changeFundsPassword,
 } from "../controllers/auth.controller.js";
-import { authorize, protect } from "../middleware/auth.middleware.js";
+import { protect, authorize } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
@@ -14,15 +19,19 @@ const router = express.Router();
 router.post("/register", registerMerchant);
 router.post("/login", login);
 
+// Private routes
+router.get("/me", protect, getMe);
+router.post("/logout", protect, logout);
+router.put("/language", protect, updateLanguage);
+router.put("/update-profile", protect, updateProfile);
 router.put(
   "/payment-password",
   protect,
   authorize("merchant"),
   setPaymentPassword,
 );
-
-// Private routes
-router.get("/me", protect, getMe);
+router.put("/change-password", protect, changePassword);
+router.put("/change-funds-password", protect, changeFundsPassword);
 
 // Super admin only
 router.post("/create-admin", protect, authorize("superAdmin"), createAdmin);

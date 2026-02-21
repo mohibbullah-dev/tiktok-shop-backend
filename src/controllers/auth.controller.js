@@ -261,3 +261,155 @@ export const createAdmin = async (req, res) => {
     },
   });
 };
+
+// ─────────────────────────────────────────
+// @desc    Update language preference
+// @route   PUT /api/auth/language
+// @access  All roles
+// ─────────────────────────────────────────
+export const updateLanguage = async (req, res) => {
+  const { language } = req.body;
+
+  const supportedLanguages = [
+    "English",
+    "বাংলা",
+    "简体中文",
+    "Indonesia",
+    "Tiếng Việt",
+    "Português",
+    "แบบไทย",
+    "हिंदी",
+    "Türkçe",
+    "عربي",
+    "Italiano",
+    "Français",
+    "Deutsch",
+    "Bahasa Melayu",
+    "Español",
+  ];
+
+  if (!supportedLanguages.includes(language)) {
+    return res.status(400).json({ message: "Unsupported language" });
+  }
+
+  await User.findByIdAndUpdate(req.user._id, { language });
+
+  res.json({ message: "Language updated", language });
+};
+
+// ─────────────────────────────────────────
+// @desc    Update profile info
+// @route   PUT /api/auth/update-profile
+// @access  All roles
+// ─────────────────────────────────────────
+export const updateProfile = async (req, res) => {
+  const { nickname, mobile, avatar } = req.body;
+
+  const user = await User.findById(req.user._id);
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  if (nickname) user.nickname = nickname;
+  if (mobile) user.mobile = mobile;
+  if (avatar) user.avatar = avatar;
+
+  await user.save();
+
+  // If merchant, sync store phone
+  if (user.role === "merchant" && mobile) {
+    await Merchant.findOneAndUpdate({ user: user._id }, { storePhone: mobile });
+  }
+
+  res.json({
+    message: "Profile updated",
+    user: {
+      _id: user._id,
+      username: user.username,
+      nickname: user.nickname,
+      mobile: user.mobile,
+      avatar: user.avatar,
+      email: user.email,
+    },
+  });
+};
+
+// ─────────────────────────────────────────
+// @desc    Change login password
+// @route   PUT /api/auth/change-password
+// @access  All roles
+// ─────────────────────────────────────────
+export const changePassword = async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  const user = await User.findById(req.user._id);
+
+  const isMatch = await user.matchPassword(currentPassword);
+  if (!isMatch) {
+    return res.status(401).json({ message: "Current password is incorrect" });
+  }
+
+  if (newPassword.length < 6) {
+    return res.status(400).json({
+      message: "New password must be at least 6 characters",
+    });
+  }
+
+  user.password = newPassword;
+  await user.save();
+
+  res.json({ message: "Password changed successfully" });
+};
+
+// ─────────────────────────────────────────
+// @desc    Change funds/payment password
+// @route   PUT /api/auth/change-funds-password
+// @access  All roles
+// ─────────────────────────────────────────
+export const changeFundsPassword = async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  if (!newPassword || newPassword.length !== 6) {
+    return res.status(400).json({
+      message: "Funds password must be exactly 6 digits",
+    });
+  }
+
+  const user = await User.findById(req.user._id);
+
+  // Verify current funds password
+  if (user.paymentPassword) {
+    const bcrypt = await import("bcryptjs");
+    const isMatch = await bcrypt.default.compare(
+      currentPassword,
+      user.paymentPassword,
+    );
+    if (!isMatch) {
+      return res.status(401).json({
+        message: "Current funds password is incorrect",
+      });
+    }
+  }
+
+  const bcrypt = await import("bcryptjs");
+  const salt = await bcrypt.default.genSalt(10);
+  user.paymentPassword = await bcrypt.default.hash(newPassword, salt);
+  await user.save();
+
+  res.json({ message: "Funds password changed successfully" });
+};
+
+// ─────────────────────────────────────────
+// @desc    Logout (set merchant offline)
+// @route   POST /api/auth/logout
+// @access  All roles
+// ─────────────────────────────────────────
+export const logout = async (req, res) => {
+  if (req.user.role === "merchant") {
+    await Merchant.findOneAndUpdate(
+      { user: req.user._id },
+      { isOnline: false },
+    );
+  }
+  res.json({ message: "Logged out successfully" });
+};
