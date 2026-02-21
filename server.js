@@ -19,6 +19,8 @@ import noticeRoutes from "./src/routes/notice.route.js";
 import questionRoutes from "./src/routes/question.route.js";
 import trafficTaskRoutes from "./src/routes/trafficTask.route.js";
 import uploadRoutes from "./src/routes/upload.route.js";
+import { chatEvents } from "./src/utils/chatEvents.js";
+import chatRoutes from "./src/routes/chat.route.js";
 // Load environment variables
 dotenv.config();
 
@@ -58,19 +60,24 @@ app.use("/api/notices", noticeRoutes);
 app.use("/api/questions", questionRoutes);
 app.use("/api/traffic-tasks", trafficTaskRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/chat", chatRoutes);
+
 // Test route
 app.get("/", (req, res) => {
   res.json({ message: "TikTok Shop API is running..." });
 });
 
 // Socket.io connection
-io.on("connection", (socket) => {
-  console.log(`Socket connected: ${socket.id}`);
+// io.on("connection", (socket) => {
+//   console.log(`Socket connected: ${socket.id}`);
 
-  socket.on("disconnect", () => {
-    console.log(`Socket disconnected: ${socket.id}`);
-  });
-});
+//   socket.on("disconnect", () => {
+//     console.log(`Socket disconnected: ${socket.id}`);
+//   });
+// });
+
+// chat-events starts from here
+chatEvents(io);
 
 // Start server
 const PORT = process.env.PORT || 5000;
