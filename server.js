@@ -17,6 +17,7 @@ import transactionRoutes from "./src/routes/transaction.route.js";
 import attendanceRoutes from "./src/routes/attendance.route.js";
 import noticeRoutes from "./src/routes/notice.route.js";
 import questionRoutes from "./src/routes/question.route.js";
+import trafficTaskRoutes from "./src/routes/trafficTask.route.js";
 
 // Load environment variables
 dotenv.config();
@@ -55,6 +56,7 @@ app.use("/api/transactions", transactionRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/notices", noticeRoutes);
 app.use("/api/questions", questionRoutes);
+app.use("/api/traffic-tasks", trafficTaskRoutes);
 // Test route
 app.get("/", (req, res) => {
   res.json({ message: "TikTok Shop API is running..." });
