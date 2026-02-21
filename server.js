@@ -21,6 +21,7 @@ import trafficTaskRoutes from "./src/routes/trafficTask.route.js";
 import uploadRoutes from "./src/routes/upload.route.js";
 import { chatEvents } from "./src/utils/chatEvents.js";
 import chatRoutes from "./src/routes/chat.route.js";
+import complaintRoutes from "./src/routes/complaint.route.js";
 // Load environment variables
 dotenv.config();
 
@@ -61,6 +62,7 @@ app.use("/api/questions", questionRoutes);
 app.use("/api/traffic-tasks", trafficTaskRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/complaints", complaintRoutes);
 
 // Test route
 app.get("/", (req, res) => {
