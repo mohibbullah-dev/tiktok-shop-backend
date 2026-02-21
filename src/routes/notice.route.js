@@ -6,7 +6,7 @@ import {
   markAsSeen,
   updateNotice,
   deleteNotice,
-} from "../controllers/notice.model.js";
+} from "../controllers/notice.controller.js";
 import { protect, authorize } from "../middleware/auth.middleware.js";
 
 const router = express.Router();

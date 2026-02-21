@@ -6,7 +6,7 @@ import {
   updateQuestion,
   deleteQuestion,
   seedQuestions,
-} from "../controllers/question.model.js";
+} from "../controllers/question.controller.js";
 import { protect, authorize } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
