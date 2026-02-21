@@ -70,6 +70,45 @@ export const deleteQuestion = async (req, res) => {
 };
 
 // ─────────────────────────────────────────
+// @desc    Get cooperation contract
+// @route   GET /api/questions/contract
+// @access  merchant only
+// ─────────────────────────────────────────
+export const getContract = async (req, res) => {
+  res.json({
+    title: "TikTok Shop Cooperation Agreement",
+    content: `TIKTOK SHOP COOPERATION AGREEMENT
+
+This agreement is between TikTok Shop Platform and the Store Owner.
+
+1. PLATFORM SERVICES
+TikTok Shop provides order management, product distribution, and payment processing services.
+
+2. STORE OBLIGATIONS
+- Process orders within stipulated timeframes
+- Maintain minimum credit score of 80
+- Comply with platform advertising regulations
+
+3. PROFIT SHARING
+- Profit rates based on VIP level (15% to 43%)
+- Profits confirmed by platform administrator
+- Withdrawals processed within 3 business days
+
+4. ACCOUNT MANAGEMENT
+- Store owners must maintain sufficient working capital
+- Daily sign-in rewards of $15 available
+- VIP upgrades available based on working capital
+
+5. TERMINATION
+Either party may terminate with 30 days notice after all orders are completed and funds withdrawn.
+
+This document reflects the exact workflow demonstrated in the reference interface.`,
+    version: "1.0",
+    updatedAt: new Date(),
+  });
+};
+
+// ─────────────────────────────────────────
 // @desc    Seed default FAQ questions
 // @route   POST /api/questions/seed
 // @access  superAdmin only
