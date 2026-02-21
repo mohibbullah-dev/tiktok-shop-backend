@@ -106,3 +106,21 @@ export const endTask = async (req, res) => {
 
   res.json({ message: "Task ended", task });
 };
+
+// ─────────────────────────────────────────
+// @desc    Get merchant's own traffic tasks
+// @route   GET /api/traffic-tasks/my-tasks
+// @access  merchant only
+// ─────────────────────────────────────────
+export const getMyTrafficTasks = async (req, res) => {
+  const merchant = await Merchant.findOne({ user: req.user._id });
+  if (!merchant) {
+    return res.status(404).json({ message: "Merchant not found" });
+  }
+
+  const tasks = await TrafficTask.find({ merchant: merchant._id }).sort({
+    createdAt: -1,
+  });
+
+  res.json(tasks);
+};
