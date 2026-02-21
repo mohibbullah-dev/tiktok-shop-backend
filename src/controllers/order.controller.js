@@ -462,6 +462,35 @@ export const confirmOrderProfit = async (req, res) => {
     type: "orderCompleted",
   });
 
+  // Auto update star rating when profit confirmed on time
+  const now = new Date();
+  const wasOnTime = order.pickupDeadline && now <= order.pickupDeadline;
+
+  if (wasOnTime) {
+    // Add 0.1 star, max 5
+    merchant.starRating = Math.min(5, merchant.starRating + 0.1);
+    merchant.starRating = Math.round(merchant.starRating * 10) / 10;
+  }
+
+  // Also update positive rating rate
+  const totalOrders = await Order.countDocuments({
+    merchant: merchant._id,
+    status: "completed",
+  });
+  const onTimeOrders = await Order.countDocuments({
+    merchant: merchant._id,
+    status: "completed",
+    profitConfirmed: true,
+  });
+
+  if (totalOrders > 0) {
+    merchant.positiveRatingRate = Math.round(
+      (onTimeOrders / totalOrders) * 100,
+    );
+  }
+
+  await merchant.save();
+
   // Update order
   order.status = "completed";
   order.profitConfirmed = true;
@@ -508,6 +537,18 @@ export const cancelOrder = async (req, res) => {
         type: "adminAdd",
       });
     }
+  }
+
+  // Add BEFORE order.status = 'cancelled'
+  const merchant = await Merchant.findById(order.merchant);
+  if (merchant) {
+    // Deduct 5 points for dispute/refund
+    merchant.creditScore = Math.max(0, merchant.creditScore - 5);
+    // Deduct 10 points for delayed order
+    if (order.pickupDeadline && new Date() > order.pickupDeadline) {
+      merchant.creditScore = Math.max(0, merchant.creditScore - 10);
+    }
+    await merchant.save();
   }
 
   order.status = "cancelled";
