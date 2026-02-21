@@ -10,13 +10,15 @@ import authRouter from "./src/routes/auth.route.js";
 import merchantRoutes from "./src/routes/merchant.route.js";
 import rechargeRoutes from "./src/routes/recharge.route.js";
 import withdrawalRoutes from "./src/routes/withdrawal.route.js";
+import orderRoutes from "./src/routes/order.route.js";
+import { startCronJobs } from "./src/utils/cronJobs.js";
 
 // Load environment variables
 dotenv.config();
 
 // Connect to database
 connectDB();
-
+startCronJobs();
 // Create express app
 const app = express();
 
@@ -41,6 +43,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/merchants", merchantRoutes);
 app.use("/api/recharge", rechargeRoutes);
 app.use("/api/withdrawal", withdrawalRoutes);
+app.use("/api/orders", orderRoutes);
 // Test route
 app.get("/", (req, res) => {
   res.json({ message: "TikTok Shop API is running..." });
