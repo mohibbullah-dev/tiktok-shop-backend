@@ -15,6 +15,7 @@ import vipRoutes from "./src/routes/vip.route.js";
 import productRoutes from "./src/routes/product.route.js";
 import transactionRoutes from "./src/routes/transaction.route.js";
 import attendanceRoutes from "./src/routes/attendance.route.js";
+import noticeRoutes from "./src/routes/notice.route.js";
 
 // Load environment variables
 dotenv.config();
@@ -51,6 +52,7 @@ app.use("/api/vip", vipRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/attendance", attendanceRoutes);
+app.use("/api/notices", noticeRoutes);
 
 // Test route
 app.get("/", (req, res) => {
