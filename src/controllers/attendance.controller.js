@@ -2,22 +2,31 @@ import Attendance from "../models/attendance.model.js";
 import Merchant from "../models/merchant.model.js";
 import Transaction from "../models/transaction.model.js";
 
-// ─────────────────────────────────────────
-// @desc    Daily sign-in
-// @route   POST /api/attendance/sign-in
-// @access  merchant only
-// ─────────────────────────────────────────
+// desc    Daily sign-in
+// route   POST /api/attendance/sign-in
+// access  merchant only
+
+// desc    Daily sign-in
+// route   POST /api/attendance/sign-in
+// access  merchant only
 export const signIn = async (req, res) => {
   const merchant = await Merchant.findOne({ user: req.user._id });
   if (!merchant) {
     return res.status(404).json({ message: "Merchant not found" });
   }
 
-  // Get today's date as string YYYY-MM-DD
-  const today = new Date();
-  const todayStr = today.toISOString().split("T")[0];
+  // ─── YOUR NEW SECURITY CHECK ───
+  if (merchant.status !== "approved") {
+    return res.status(403).json({
+      message:
+        "Only fully approved merchants can claim daily rewards. Please wait for Admin approval.",
+    });
+  }
 
-  // Check already signed in today
+  // Get today's date as string YYYY-MM-DD
+  const todayStr = new Date().toISOString().split("T")[0];
+
+  // Check if already signed in today
   const alreadySigned = await Attendance.findOne({
     merchant: merchant._id,
     signInDate: todayStr,
@@ -27,8 +36,8 @@ export const signIn = async (req, res) => {
     return res.status(400).json({ message: "Already signed in today" });
   }
 
-  // Check consecutive days
-  const yesterday = new Date(today);
+  // Check consecutive days (Did they sign in yesterday?)
+  const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
   const yesterdayStr = yesterday.toISOString().split("T")[0];
 
@@ -41,16 +50,21 @@ export const signIn = async (req, res) => {
   if (yesterdaySignIn) {
     merchant.consecutiveSignIns += 1;
   } else {
-    merchant.consecutiveSignIns = 1;
+    merchant.consecutiveSignIns = 1; // Reset to 1 if they missed a day
   }
 
-  merchant.monthlySignIns += 1;
-  merchant.lastSignIn = today;
+  // ─── THE NEW SMART FINANCIAL LOGIC ───
+  // Base reward is $0.25. Add $0.5 for each consecutive day, capped at $2.00 max.
+  let reward = 0.25;
+  if (merchant.consecutiveSignIns === 2) reward = 0.5;
+  if (merchant.consecutiveSignIns === 3) reward = 0.75;
+  if (merchant.consecutiveSignIns >= 4) reward = 1.0;
 
-  // Sign-in reward is $15
-  const reward = 15;
+  merchant.monthlySignIns += 1;
+  merchant.lastSignIn = new Date();
   merchant.balance += reward;
   merchant.totalIncome += reward;
+
   await merchant.save();
 
   // Create attendance record
@@ -70,7 +84,7 @@ export const signIn = async (req, res) => {
   });
 
   res.status(201).json({
-    message: "Sign in successful",
+    message: `Sign in successful! You earned $${reward.toFixed(2)}`,
     reward,
     consecutiveSignIns: merchant.consecutiveSignIns,
     newBalance: merchant.balance,
@@ -78,11 +92,10 @@ export const signIn = async (req, res) => {
   });
 };
 
-// ─────────────────────────────────────────
-// @desc    Get sign-in calendar for merchant
-// @route   GET /api/attendance/calendar
-// @access  merchant only
-// ─────────────────────────────────────────
+// desc    Get sign-in calendar for merchant
+// route   GET /api/attendance/calendar
+// access  merchant only
+
 export const getCalendar = async (req, res) => {
   const { year, month } = req.query;
 
@@ -117,11 +130,10 @@ export const getCalendar = async (req, res) => {
   });
 };
 
-// ─────────────────────────────────────────
-// @desc    Get all attendance records (admin)
-// @route   GET /api/attendance
-// @access  superAdmin only
-// ─────────────────────────────────────────
+// desc    Get all attendance records (admin)
+// route   GET /api/attendance
+// access  superAdmin only
+
 export const getAllAttendance = async (req, res) => {
   const { merchantId, page = 1, limit = 10 } = req.query;
 
@@ -146,4 +158,38 @@ export const getAllAttendance = async (req, res) => {
     page: Number(page),
     pages: Math.ceil(total / limit),
   });
+};
+
+// desc    Revoke attendance record and deduct funds
+// route   DELETE /api/attendance/:id
+// access  superAdmin only
+export const revokeAttendance = async (req, res) => {
+  try {
+    const record = await Attendance.findById(req.params.id);
+    if (!record) return res.status(404).json({ message: "Record not found" });
+
+    const merchant = await Merchant.findById(record.merchant);
+    if (merchant) {
+      // 1. Take the reward money back from the merchant
+      merchant.balance -= record.reward;
+      merchant.totalIncome -= record.reward;
+      await merchant.save();
+
+      // 2. Record a penalty transaction so the merchant knows why money vanished
+      await Transaction.create({
+        merchant: merchant._id,
+        linkedId: record.signInDate,
+        amount: -record.reward,
+        balanceAfter: merchant.balance,
+        type: "penalty", // Indicates funds were revoked
+      });
+    }
+
+    // 3. Delete the attendance record
+    await record.deleteOne();
+
+    res.json({ message: "Attendance revoked and funds deducted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };

@@ -5,6 +5,8 @@ import {
   updateTaskProgress,
   endTask,
   getMyTrafficTasks,
+  updateTrafficTask,
+  deleteTrafficTask,
 } from "../controllers/trafficTask.controller.js";
 import { protect, authorize } from "../middleware/auth.middleware.js";
 
@@ -21,4 +23,6 @@ router.put(
 router.put("/:id/end", protect, authorize("superAdmin"), endTask);
 router.get("/my-tasks", protect, authorize("merchant"), getMyTrafficTasks);
 
+router.put("/:id", protect, authorize("superAdmin"), updateTrafficTask);
+router.delete("/:id", protect, authorize("superAdmin"), deleteTrafficTask);
 export default router;

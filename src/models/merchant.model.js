@@ -141,6 +141,26 @@ const merchantSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    totalSales: {
+      type: Number,
+      default: 0,
+    },
+    visitorsToday: {
+      type: Number,
+      default: 0,
+    },
+    visitors7Days: {
+      type: Number,
+      default: 0,
+    },
+    visitors30Days: {
+      type: Number,
+      default: 0,
+    },
+    followers: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,

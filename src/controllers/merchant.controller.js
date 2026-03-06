@@ -1,12 +1,12 @@
 import Merchant from "../models/merchant.model.js";
 import Transaction from "../models/transaction.model.js";
 import User from "../models/user.model.js";
+import Withdrawal from "../models/withdrawal.model.js";
 
-// ─────────────────────────────────────────
-// @desc    Get all merchants
-// @route   GET /api/merchants
-// @access  superAdmin, merchantAdmin
-// ─────────────────────────────────────────
+// desc    Get all merchants
+// route   GET /api/merchants
+// access  superAdmin, merchantAdmin
+
 export const getAllMerchants = async (req, res) => {
   const {
     merchantId,
@@ -49,11 +49,10 @@ export const getAllMerchants = async (req, res) => {
   });
 };
 
-// ─────────────────────────────────────────
-// @desc    Get single merchant
-// @route   GET /api/merchants/:id
-// @access  superAdmin, merchantAdmin
-// ─────────────────────────────────────────
+// desc    Get single merchant
+// route   GET /api/merchants/:id
+// access  superAdmin, merchantAdmin
+
 export const getMerchantById = async (req, res) => {
   const merchant = await Merchant.findById(req.params.id)
     .populate("user", "-password")
@@ -66,11 +65,10 @@ export const getMerchantById = async (req, res) => {
   res.json(merchant);
 };
 
-// ─────────────────────────────────────────
-// @desc    Update merchant status (approve/reject/freeze)
-// @route   PUT /api/merchants/:id/status
-// @access  superAdmin only
-// ─────────────────────────────────────────
+// desc    Update merchant status (approve/reject/freeze)
+// route   PUT /api/merchants/:id/status
+// access  superAdmin only
+
 export const updateMerchantStatus = async (req, res) => {
   const { status } = req.body;
 
@@ -92,11 +90,10 @@ export const updateMerchantStatus = async (req, res) => {
   res.json({ message: `Merchant status updated to ${status}`, merchant });
 };
 
-// ─────────────────────────────────────────
-// @desc    Toggle withdrawal forbidden
-// @route   PUT /api/merchants/:id/withdrawal-status
-// @access  superAdmin, merchantAdmin
-// ─────────────────────────────────────────
+// desc    Toggle withdrawal forbidden
+// route   PUT /api/merchants/:id/withdrawal-status
+// access  superAdmin, merchantAdmin
+
 export const toggleWithdrawal = async (req, res) => {
   const merchant = await Merchant.findById(req.params.id);
   if (!merchant) {
@@ -112,11 +109,10 @@ export const toggleWithdrawal = async (req, res) => {
   });
 };
 
-// ─────────────────────────────────────────
-// @desc    Add funds to merchant wallet
-// @route   POST /api/merchants/:id/add-funds
-// @access  superAdmin only
-// ─────────────────────────────────────────
+// desc    Add funds to merchant wallet
+// route   POST /api/merchants/:id/add-funds
+// access  superAdmin only
+
 export const addFunds = async (req, res) => {
   const { amount, note } = req.body;
 
@@ -124,7 +120,7 @@ export const addFunds = async (req, res) => {
     return res.status(400).json({ message: "Invalid amount" });
   }
 
-  const merchant = await Merchant.findById(req?.params?.id);
+  const merchant = await Merchant.findById(req.params?.id);
   if (!merchant) {
     return res.status(404).json({ message: "Merchant not found" });
   }
@@ -149,11 +145,10 @@ export const addFunds = async (req, res) => {
   });
 };
 
-// ─────────────────────────────────────────
-// @desc    Deduct funds from merchant wallet
-// @route   POST /api/merchants/:id/deduct-funds
-// @access  superAdmin only
-// ─────────────────────────────────────────
+// desc    Deduct funds from merchant wallet
+// route   POST /api/merchants/:id/deduct-funds
+// access  superAdmin only
+
 export const deductFunds = async (req, res) => {
   const { amount, note } = req.body;
 
@@ -187,11 +182,56 @@ export const deductFunds = async (req, res) => {
   });
 };
 
-// ─────────────────────────────────────────
-// @desc    Get merchant's own profile (for merchant frontend)
-// @route   GET /api/merchants/my-store
-// @access  merchant only
-// ─────────────────────────────────────────
+export const menualRecharge = async (req, res) => {
+  try {
+    const { amount } = req.body;
+
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ message: "Invalid amount" });
+    }
+
+    const merchant = await Merchant.findById(req.params.id);
+    if (!merchant) return res.status(404).json({ message: "Not found" });
+
+    const before = merchant.balance;
+    merchant.balance += amount;
+    await merchant.save();
+
+    // Create recharge record (auto-approved)
+    await Recharge.create({
+      merchant: merchant._id,
+      price: amount,
+      rechargeType: "manual",
+      currencyType: "USD",
+      status: "approved",
+      approvedAt: new Date(),
+      approvedBy: req.user._id,
+    });
+
+    // Create transaction record
+    await Transaction.create({
+      merchant: merchant._id,
+      type: "recharge",
+      amount: amount,
+      balanceBefore: before,
+      balanceAfter: merchant.balance,
+      description: "Manual recharge by admin",
+      status: "completed",
+    });
+
+    res.json({
+      message: "Recharge successful",
+      newBalance: merchant.balance,
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// desc    Get merchant's own profile (for merchant frontend)
+// route   GET /api/merchants/my-store
+// access  merchant only
+
 export const getMyStore = async (req, res) => {
   const merchant = await Merchant.findOne({ user: req.user._id }).populate(
     "user",
@@ -205,11 +245,10 @@ export const getMyStore = async (req, res) => {
   res.json(merchant);
 };
 
-// ─────────────────────────────────────────
-// @desc    Update merchant's own store info
-// @route   PUT /api/merchants/my-store
-// @access  merchant only
-// ─────────────────────────────────────────
+// desc    Update merchant's own store info
+// route   PUT /api/merchants/my-store
+// access  merchant only
+
 export const updateMyStore = async (req, res) => {
   const {
     storeName,
@@ -236,11 +275,10 @@ export const updateMyStore = async (req, res) => {
   res.json({ message: "Store updated successfully", merchant });
 };
 
-// ─────────────────────────────────────────
-// @desc    Update store banners
-// @route   PUT /api/merchants/my-store/banners
-// @access  merchant only
-// ─────────────────────────────────────────
+// desc    Update store banners
+// route   PUT /api/merchants/my-store/banners
+// access  merchant only
+
 export const updateBanners = async (req, res) => {
   const { banners } = req.body;
 
@@ -255,11 +293,10 @@ export const updateBanners = async (req, res) => {
   res.json({ message: "Banners updated", banners: merchant.banners });
 };
 
-// ─────────────────────────────────────────
-// @desc    Get dashboard stats (for admin)
-// @route   GET /api/merchants/dashboard-stats
-// @access  superAdmin
-// ─────────────────────────────────────────
+// desc    Get dashboard stats (for admin)
+// route   GET /api/merchants/dashboard-stats
+// access  superAdmin
+
 export const getDashboardStats = async (req, res) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -338,4 +375,94 @@ export const getDashboardStats = async (req, res) => {
       total: totalProfit[0]?.total || 0,
     },
   });
+};
+
+// @desc    Get dashboard stats for merchantAdmin (their referred merchants only)
+// @route   GET /api/merchants/my-stats
+// @access  merchantAdmin only
+// ─────────────────────────────────────────────────────────────────────────────
+export const getMerchantAdminStats = async (req, res) => {
+  try {
+    // Step 1: Get all merchants referred by this merchantAdmin
+    const referredMerchants = await Merchant.find({ referrer: req.user._id });
+    const merchantIds = referredMerchants.map((m) => m._id);
+
+    if (merchantIds.length === 0) {
+      return res.json({
+        totalMerchants: 0,
+        activeMerchants: 0,
+        pendingMerchants: 0,
+        frozenMerchants: 0,
+        totalWithdrawals: 0,
+        pendingWithdrawals: 0,
+        totalBalance: 0,
+        totalProfit: 0,
+        recentMerchants: [],
+        recentWithdrawals: [],
+      });
+    }
+
+    // Step 2: Run all stats in parallel
+    const [
+      activeMerchants,
+      pendingMerchants,
+      frozenMerchants,
+      pendingWithdrawals,
+      recentMerchants,
+      recentWithdrawals,
+      withdrawalSum,
+    ] = await Promise.all([
+      Merchant.countDocuments({ referrer: req.user._id, status: "approved" }),
+      Merchant.countDocuments({ referrer: req.user._id, status: "pending" }),
+      Merchant.countDocuments({ referrer: req.user._id, status: "frozen" }),
+      Withdrawal.countDocuments({
+        merchant: { $in: merchantIds },
+        status: "underReview",
+      }),
+      Merchant.find({ referrer: req.user._id })
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .select("storeName merchantId status vipLevel balance createdAt"),
+      Withdrawal.find({ merchant: { $in: merchantIds } })
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .populate("merchant", "storeName merchantId"),
+      // Sum of all approved withdrawals from their merchants
+      Withdrawal.aggregate([
+        {
+          $match: {
+            merchant: { $in: merchantIds },
+            status: { $in: ["withdrawn", "approved"] },
+          },
+        },
+        { $group: { _id: null, total: { $sum: "$extractPrice" } } },
+      ]),
+    ]);
+
+    // Step 3: Calculate balance/profit sums from the referred merchants array
+    const totalBalance = referredMerchants.reduce(
+      (sum, m) => sum + (m.balance || 0),
+      0,
+    );
+    const totalProfit = referredMerchants.reduce(
+      (sum, m) => sum + (m.totalProfit || 0),
+      0,
+    );
+
+    res.json({
+      totalMerchants: merchantIds.length,
+      activeMerchants,
+      pendingMerchants,
+      frozenMerchants,
+      totalWithdrawals: withdrawalSum[0]?.total || 0,
+      pendingWithdrawals,
+      totalBalance,
+      totalProfit,
+      recentMerchants,
+      recentWithdrawals,
+    });
+  } catch (err) {
+    console.error("MerchantAdmin stats error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
 };

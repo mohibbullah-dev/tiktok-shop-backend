@@ -22,6 +22,12 @@ import uploadRoutes from "./src/routes/upload.route.js";
 import { chatEvents } from "./src/utils/chatEvents.js";
 import chatRoutes from "./src/routes/chat.route.js";
 import complaintRoutes from "./src/routes/complaint.route.js";
+import adminLogRoutes from "./src/routes/adminLog.route.js";
+import refundRoutes from "./src/routes/refund.route.js"; // Add to top
+import systemSettingRoutes from "./src/routes/systemSetting.route.js"; // Add to top
+import adminManagementRoutes from "./src/routes/adminManagement.route.js"; // Add to top
+import teamRoutes from "./src/routes/team.route.js"; // Add to top
+
 // Load environment variables
 dotenv.config();
 
@@ -63,6 +69,11 @@ app.use("/api/traffic-tasks", trafficTaskRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/complaints", complaintRoutes);
+app.use("/api/admin-logs", adminLogRoutes);
+app.use("/api/refunds", refundRoutes); // Add this line
+app.use("/api/settings", systemSettingRoutes); // Add this line
+app.use("/api/admins", adminManagementRoutes); // Add this line
+app.use("/api/team", teamRoutes); // Add this line
 
 // Test route
 app.get("/", (req, res) => {

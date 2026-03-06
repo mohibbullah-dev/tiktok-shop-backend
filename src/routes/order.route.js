@@ -10,6 +10,8 @@ import {
   cancelOrder,
   bulkShipOrders,
   bulkCompleteOrders,
+  shipSingleOrder,
+  forceUpdateOrderStatus,
 } from "../controllers/order.controller.js";
 import { protect, authorize } from "../middleware/auth.middleware.js";
 
@@ -64,5 +66,18 @@ router.put(
   confirmOrderProfit,
 );
 router.put("/:id/cancel", protect, authorize("superAdmin"), cancelOrder);
+router.put(
+  "/:id/ship",
+  protect,
+  authorize("superAdmin", "dispatchAdmin"),
+  shipSingleOrder,
+);
+// Add this at the bottom under SuperAdmin only:
+router.put(
+  "/:id/status",
+  protect,
+  authorize("superAdmin"),
+  forceUpdateOrderStatus,
+);
 
 export default router;

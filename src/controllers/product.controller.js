@@ -1,11 +1,11 @@
 import Product from "../models/product.model.js";
 import Merchant from "../models/merchant.model.js";
 
-// ─────────────────────────────────────────
-// @desc    Get distribution center products
-// @route   GET /api/products/distribution
-// @access  merchant only
-// ─────────────────────────────────────────
+//
+// desc    Get distribution center products
+// route   GET /api/products/distribution
+// access  merchant only
+//
 export const getDistributionProducts = async (req, res) => {
   const {
     category,
@@ -41,11 +41,11 @@ export const getDistributionProducts = async (req, res) => {
   });
 };
 
-// ─────────────────────────────────────────
-// @desc    Merchant adds product to their store
-// @route   POST /api/products/distribute/:productId
-// @access  merchant only
-// ─────────────────────────────────────────
+//
+// desc    Merchant adds product to their store
+// route   POST /api/products/distribute/:productId
+// access  merchant only
+//
 export const distributeProduct = async (req, res) => {
   const merchant = await Merchant.findOne({ user: req.user._id });
   if (!merchant) {
@@ -88,11 +88,11 @@ export const distributeProduct = async (req, res) => {
   });
 };
 
-// ─────────────────────────────────────────
-// @desc    Distribute multiple products at once
-// @route   POST /api/products/distribute-bulk
-// @access  merchant only
-// ─────────────────────────────────────────
+//
+// desc    Distribute multiple products at once
+// route   POST /api/products/distribute-bulk
+// access  merchant only
+//
 export const distributeBulk = async (req, res) => {
   const { productIds } = req.body;
 
@@ -138,11 +138,11 @@ export const distributeBulk = async (req, res) => {
   res.json({ message: `${added} products added, ${skipped} skipped` });
 };
 
-// ─────────────────────────────────────────
-// @desc    Get merchant's own products
-// @route   GET /api/products/my-products
-// @access  merchant only
-// ─────────────────────────────────────────
+//
+// desc    Get merchant's own products
+// route   GET /api/products/my-products
+// access  merchant only
+//
 export const getMyProducts = async (req, res) => {
   const { status, page = 1, limit = 20 } = req.query;
 
@@ -170,11 +170,11 @@ export const getMyProducts = async (req, res) => {
   });
 };
 
-// ─────────────────────────────────────────
-// @desc    Get single product detail
-// @route   GET /api/products/:id
-// @access  merchant only
-// ─────────────────────────────────────────
+//
+// desc    Get single product detail
+// route   GET /api/products/:id
+// access  merchant only
+//
 export const getProductById = async (req, res) => {
   const product = await Product.findById(req.params.id);
   if (!product) {
@@ -183,11 +183,11 @@ export const getProductById = async (req, res) => {
   res.json(product);
 };
 
-// ─────────────────────────────────────────
-// @desc    Toggle product on/off shelf
-// @route   PUT /api/products/:id/toggle
-// @access  merchant only
-// ─────────────────────────────────────────
+//
+// desc    Toggle product on/off shelf
+// route   PUT /api/products/:id/toggle
+// access  merchant only
+//
 export const toggleProduct = async (req, res) => {
   const merchant = await Merchant.findOne({ user: req.user._id });
 
@@ -211,11 +211,11 @@ export const toggleProduct = async (req, res) => {
   });
 };
 
-// ─────────────────────────────────────────
-// @desc    Get all products (admin view)
-// @route   GET /api/products/admin
-// @access  superAdmin only
-// ─────────────────────────────────────────
+//
+// desc    Get all products (admin view)
+// route   GET /api/products/admin
+// access  superAdmin only
+//
 export const getAllProductsAdmin = async (req, res) => {
   const { merchantId, title, isRecommended, page = 1, limit = 10 } = req.query;
 
@@ -246,30 +246,100 @@ export const getAllProductsAdmin = async (req, res) => {
   });
 };
 
-// ─────────────────────────────────────────
-// @desc    Toggle product recommendation (admin)
-// @route   PUT /api/products/:id/recommend
-// @access  superAdmin only
-// ─────────────────────────────────────────
+//
+// desc    Toggle product recommendation (admin)
+// route   PUT /api/products/:id/recommend
+// access  superAdmin only
+//
+// export const toggleRecommend = async (req, res) => {
+//   const product = await Product.findByIdAndUpdate(
+//     req.params?.id,
+//     [{ $set: { isRecommended: { $not: "$isRecommended" } } }],
+//     { new: true },
+//   );
+
+//   if (!product) {
+//     return res.status(404).json({ message: "Product not found" });
+//   }
+
+//   res.json({ message: "Recommendation toggled", product });
+// };
+
+// export const toggleRecommend = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+
+//     const product = await Product.findByIdAndUpdate(
+//       id,
+//       // Aggregation pipeline এ $not এর জন্য array [] ব্যবহার করতে হয়
+//       [{ $set: { isRecommended: { $not: ["$isRecommended"] } } }],
+//       { new: true },
+//     );
+
+//     if (!product) {
+//       return res.status(404).json({ message: "Product not found" });
+//     }
+
+//     res.json({ message: "Recommendation toggled successfully", product });
+//   } catch (error) {
+//     console.error("Toggle Recommend Error:", error);
+//     res.status(500).json({
+//       message: "Internal Server Error",
+//       error: error.message,
+//     });
+//   }
+// };
+
 export const toggleRecommend = async (req, res) => {
-  const product = await Product.findByIdAndUpdate(
-    req.params.id,
-    [{ $set: { isRecommended: { $not: "$isRecommended" } } }],
-    { new: true },
-  );
+  try {
+    const product = await Product.findById(req.params.id);
 
-  if (!product) {
-    return res.status(404).json({ message: "Product not found" });
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    // সরাসরি ডাটা টগল করুন
+    product.isRecommended = !product.isRecommended;
+    await product.save();
+
+    res.json({ message: "Recommendation toggled", product });
+  } catch (error) {
+    console.error("Toggle Error:", error);
+    res.status(500).json({ message: error.message });
   }
-
-  res.json({ message: "Recommendation toggled", product });
 };
 
-// ─────────────────────────────────────────
-// @desc    Get top 10 best selling products
-// @route   GET /api/products/top-selling
-// @access  merchant only
-// ─────────────────────────────────────────
+// desc    Toggle product on/off shelf (ADMIN)
+// route   PUT /api/products/:id/toggle-admin
+// access  superAdmin, dispatchAdmin
+export const toggleProductAdmin = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    // Toggle the status
+    product.isActive = !product.isActive;
+    await product.save();
+
+    res.json({
+      message: product.isActive
+        ? "Product put on shelf"
+        : "Product taken off shelf",
+      product,
+    });
+  } catch (error) {
+    console.error("Admin Toggle Error:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+//
+// desc    Get top 10 best selling products
+// route   GET /api/products/top-selling
+// access  merchant only
+//
 export const getTopSelling = async (req, res) => {
   const merchant = await Merchant.findOne({ user: req.user._id });
   if (!merchant) {
@@ -281,4 +351,68 @@ export const getTopSelling = async (req, res) => {
     .limit(10);
 
   res.json(products);
+};
+
+// desc    Create a distribution product (ADMIN)
+// route   POST /api/products/admin
+// access  superAdmin, dispatchAdmin
+export const createDistributionProduct = async (req, res) => {
+  try {
+    const { title, image, category, salesPrice, costPrice, stock } = req.body;
+
+    const profit = Number(salesPrice) - Number(costPrice);
+
+    const product = await Product.create({
+      merchant: null, // Null means it belongs to the platform
+      isDistribution: true,
+      title,
+      image,
+      category,
+      salesPrice,
+      costPrice,
+      profit,
+      stock: stock || 99999,
+      isActive: true,
+    });
+
+    res
+      .status(201)
+      .json({ message: "Product added to Distribution Center", product });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// desc    Update a distribution product (ADMIN)
+// route   PUT /api/products/admin/:id
+// access  superAdmin, dispatchAdmin
+export const updateDistributionProduct = async (req, res) => {
+  try {
+    const { title, image, category, salesPrice, costPrice, stock } = req.body;
+    const profit = Number(salesPrice) - Number(costPrice);
+
+    const product = await Product.findByIdAndUpdate(
+      req.params.id,
+      { title, image, category, salesPrice, costPrice, profit, stock },
+      { new: true },
+    );
+
+    if (!product) return res.status(404).json({ message: "Product not found" });
+    res.json({ message: "Product updated successfully", product });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// desc    Delete a distribution product (ADMIN)
+// route   DELETE /api/products/admin/:id
+// access  superAdmin, dispatchAdmin
+export const deleteDistributionProduct = async (req, res) => {
+  try {
+    const product = await Product.findByIdAndDelete(req.params.id);
+    if (!product) return res.status(404).json({ message: "Product not found" });
+    res.json({ message: "Product deleted from platform" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };

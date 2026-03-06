@@ -1,11 +1,11 @@
 import TrafficTask from "../models/trafficTask.model.js";
 import Merchant from "../models/merchant.model.js";
 
-// ─────────────────────────────────────────
-// @desc    Create traffic task for merchant
-// @route   POST /api/traffic-tasks
-// @access  superAdmin only
-// ─────────────────────────────────────────
+//
+// desc    Create traffic task for merchant
+// route   POST /api/traffic-tasks
+// access  superAdmin only
+//
 export const createTrafficTask = async (req, res) => {
   const {
     merchantId,
@@ -34,11 +34,11 @@ export const createTrafficTask = async (req, res) => {
   res.status(201).json({ message: "Traffic task created", task });
 };
 
-// ─────────────────────────────────────────
-// @desc    Get all traffic tasks
-// @route   GET /api/traffic-tasks
-// @access  superAdmin only
-// ─────────────────────────────────────────
+//
+// desc    Get all traffic tasks
+// route   GET /api/traffic-tasks
+// access  superAdmin only
+//
 export const getAllTrafficTasks = async (req, res) => {
   const { status, merchantId, page = 1, limit = 10 } = req.query;
 
@@ -66,11 +66,11 @@ export const getAllTrafficTasks = async (req, res) => {
   });
 };
 
-// ─────────────────────────────────────────
-// @desc    Update traffic task progress
-// @route   PUT /api/traffic-tasks/:id/progress
-// @access  superAdmin only
-// ─────────────────────────────────────────
+//
+// desc    Update traffic task progress
+// route   PUT /api/traffic-tasks/:id/progress
+// access  superAdmin only
+//
 export const updateTaskProgress = async (req, res) => {
   const { completedTraffic } = req.body;
 
@@ -90,11 +90,11 @@ export const updateTaskProgress = async (req, res) => {
   res.json({ message: "Task progress updated", task });
 };
 
-// ─────────────────────────────────────────
-// @desc    End traffic task manually
-// @route   PUT /api/traffic-tasks/:id/end
-// @access  superAdmin only
-// ─────────────────────────────────────────
+//
+// desc    End traffic task manually
+// route   PUT /api/traffic-tasks/:id/end
+// access  superAdmin only
+//
 export const endTask = async (req, res) => {
   const task = await TrafficTask.findById(req.params.id);
   if (!task) {
@@ -107,11 +107,11 @@ export const endTask = async (req, res) => {
   res.json({ message: "Task ended", task });
 };
 
-// ─────────────────────────────────────────
-// @desc    Get merchant's own traffic tasks
-// @route   GET /api/traffic-tasks/my-tasks
-// @access  merchant only
-// ─────────────────────────────────────────
+//
+// desc    Get merchant's own traffic tasks
+// route   GET /api/traffic-tasks/my-tasks
+// access  merchant only
+//
 export const getMyTrafficTasks = async (req, res) => {
   const merchant = await Merchant.findOne({ user: req.user._id });
   if (!merchant) {
@@ -123,4 +123,54 @@ export const getMyTrafficTasks = async (req, res) => {
   });
 
   res.json(tasks);
+};
+
+// desc    Update traffic task
+// route   PUT /api/traffic-tasks/:id
+// access  superAdmin only
+export const updateTrafficTask = async (req, res) => {
+  try {
+    const {
+      traffic,
+      executionDuration,
+      startExecutionTime,
+      taskInformation,
+      status,
+      completedTraffic,
+    } = req.body;
+
+    const task = await TrafficTask.findById(req.params.id);
+    if (!task) return res.status(404).json({ message: "Task not found" });
+
+    // Update fields if provided
+    if (traffic !== undefined) task.traffic = traffic;
+    if (completedTraffic !== undefined)
+      task.completedTraffic = completedTraffic;
+    if (executionDuration !== undefined)
+      task.executionDuration = executionDuration;
+    if (startExecutionTime !== undefined)
+      task.startExecutionTime = startExecutionTime;
+    if (taskInformation !== undefined) task.taskInformation = taskInformation;
+    if (status !== undefined) task.status = status;
+
+    await task.save();
+    res.json({ message: "Task updated successfully", task });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// desc    Delete traffic task
+// route   DELETE /api/traffic-tasks/:id
+// access  superAdmin only
+export const deleteTrafficTask = async (req, res) => {
+  try {
+    const task = await TrafficTask.findById(req.params.id);
+    if (!task) return res.status(404).json({ message: "Task not found" });
+
+    await task.deleteOne();
+    res.json({ message: "Task deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };

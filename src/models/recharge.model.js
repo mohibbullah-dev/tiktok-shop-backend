@@ -34,8 +34,8 @@ const rechargeSchema = new mongoose.Schema(
       default: "", // uploaded screenshot image URL
     },
     status: {
-      type: Number,
-      enum: [0, 1],
+      type: String,
+      enum: [0, 1, 2],
       default: 0, // 0 = pending review, 1 = approved
     },
     reviewedBy: {

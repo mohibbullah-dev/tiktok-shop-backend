@@ -87,11 +87,10 @@ const generateLogistics = (orderSn) => {
   ];
 };
 
-// ─────────────────────────────────────────
-// @desc    Dispatch Admin creates order for merchant
-// @route   POST /api/orders/dispatch
-// @access  dispatchAdmin only
-// ─────────────────────────────────────────
+// desc    Dispatch Admin creates order for merchant
+// route   POST /api/orders/dispatch
+// access  dispatchAdmin only
+
 export const dispatchOrder = async (req, res) => {
   const { merchantId, products, completionDays } = req.body;
 
@@ -165,11 +164,10 @@ export const dispatchOrder = async (req, res) => {
   });
 };
 
-// ─────────────────────────────────────────
-// @desc    Dispatch bulk orders to multiple merchants
-// @route   POST /api/orders/dispatch-bulk
-// @access  dispatchAdmin only
-// ─────────────────────────────────────────
+// desc    Dispatch bulk orders to multiple merchants
+// route   POST /api/orders/dispatch-bulk
+// access  dispatchAdmin only
+
 export const dispatchBulkOrders = async (req, res) => {
   const { orders } = req.body;
   // orders = array of { merchantId, products, completionDays }
@@ -247,11 +245,10 @@ export const dispatchBulkOrders = async (req, res) => {
   });
 };
 
-// ─────────────────────────────────────────
-// @desc    Merchant clicks "Pickup" order
-// @route   PUT /api/orders/:id/pickup
-// @access  merchant only
-// ─────────────────────────────────────────
+// desc    Merchant clicks "Pickup" order
+// route   PUT /api/orders/:id/pickup
+// access  merchant only
+
 export const pickupOrder = async (req, res) => {
   const merchant = await Merchant.findOne({ user: req.user._id });
   if (!merchant) {
@@ -312,11 +309,10 @@ export const pickupOrder = async (req, res) => {
   });
 };
 
-// ─────────────────────────────────────────
-// @desc    Get all orders (admin)
-// @route   GET /api/orders
-// @access  superAdmin, dispatchAdmin, merchantAdmin
-// ─────────────────────────────────────────
+// desc    Get all orders (admin)
+// route   GET /api/orders
+// access  superAdmin, dispatchAdmin, merchantAdmin
+
 export const getAllOrders = async (req, res) => {
   const { status, merchantId, orderSn, page = 1, limit = 10 } = req.query;
 
@@ -367,11 +363,10 @@ export const getAllOrders = async (req, res) => {
   });
 };
 
-// ─────────────────────────────────────────
-// @desc    Get merchant's own orders
-// @route   GET /api/orders/my-orders
-// @access  merchant only
-// ─────────────────────────────────────────
+// desc    Get merchant's own orders
+// route   GET /api/orders/my-orders
+// access  merchant only
+
 export const getMyOrders = async (req, res) => {
   const { status, page = 1, limit = 10 } = req.query;
 
@@ -398,11 +393,11 @@ export const getMyOrders = async (req, res) => {
   });
 };
 
-// ─────────────────────────────────────────
-// @desc    Get single order detail
-// @route   GET /api/orders/:id
-// @access  merchant, superAdmin, dispatchAdmin
-// ─────────────────────────────────────────
+//
+// desc    Get single order detail
+// route   GET /api/orders/:id
+// access  merchant, superAdmin, dispatchAdmin
+//
 export const getOrderById = async (req, res) => {
   const order = await Order.findById(req.params.id).populate(
     "merchant",
@@ -424,11 +419,11 @@ export const getOrderById = async (req, res) => {
   res.json(order);
 };
 
-// ─────────────────────────────────────────
-// @desc    Super admin confirms order profit
-// @route   PUT /api/orders/:id/confirm-profit
-// @access  superAdmin only
-// ─────────────────────────────────────────
+//
+// desc    Super admin confirms order profit
+// route   PUT /api/orders/:id/confirm-profit
+// access  superAdmin only
+//
 export const confirmOrderProfit = async (req, res) => {
   const order = await Order.findById(req.params.id);
   if (!order) {
@@ -505,11 +500,11 @@ export const confirmOrderProfit = async (req, res) => {
   });
 };
 
-// ─────────────────────────────────────────
-// @desc    Admin cancel order
-// @route   PUT /api/orders/:id/cancel
-// @access  superAdmin only
-// ─────────────────────────────────────────
+//
+// desc    Admin cancel order
+// route   PUT /api/orders/:id/cancel
+// access  superAdmin only
+//
 export const cancelOrder = async (req, res) => {
   const order = await Order.findById(req.params.id);
   if (!order) {
@@ -557,11 +552,11 @@ export const cancelOrder = async (req, res) => {
   res.json({ message: "Order cancelled", order });
 };
 
-// ─────────────────────────────────────────
-// @desc    One-click ship all pending orders (admin)
-// @route   PUT /api/orders/bulk-ship
-// @access  superAdmin, dispatchAdmin
-// ─────────────────────────────────────────
+//
+// desc    One-click ship all pending orders (admin)
+// route   PUT /api/orders/bulk-ship
+// access  superAdmin, dispatchAdmin
+//
 export const bulkShipOrders = async (req, res) => {
   const { merchantId } = req.body;
 
@@ -581,11 +576,11 @@ export const bulkShipOrders = async (req, res) => {
   });
 };
 
-// ─────────────────────────────────────────
-// @desc    One-click complete all shipped orders (admin)
-// @route   PUT /api/orders/bulk-complete
-// @access  superAdmin only
-// ─────────────────────────────────────────
+//
+// desc    One-click complete all shipped orders (admin)
+// route   PUT /api/orders/bulk-complete
+// access  superAdmin only
+//
 export const bulkCompleteOrders = async (req, res) => {
   const orders = await Order.find({ status: "shipped" });
 
@@ -619,4 +614,36 @@ export const bulkCompleteOrders = async (req, res) => {
   }
 
   res.json({ message: `${completed} orders completed and profits confirmed` });
+};
+
+// desc    Single ship an order
+// route   PUT /api/orders/:id/ship
+// access  superAdmin, dispatchAdmin
+export const shipSingleOrder = async (req, res) => {
+  const order = await Order.findById(req.params.id);
+  if (!order) return res.status(404).json({ message: "Order not found" });
+
+  order.status = "shipped";
+  await order.save();
+  res.json({ message: "Single order shipped successfully", order });
+};
+
+// desc    Force update order status (Admin Single Control)
+// route   PUT /api/orders/:id/status
+// access  superAdmin
+export const forceUpdateOrderStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    order.status = status;
+    await order.save();
+    res.json({
+      message: `Order status forcefully changed to ${status}`,
+      order,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };

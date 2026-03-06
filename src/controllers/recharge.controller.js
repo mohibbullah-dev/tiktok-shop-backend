@@ -7,11 +7,11 @@ const generateRechargeId = () => {
   return "RCH" + Date.now() + Math.floor(Math.random() * 1000);
 };
 
-// ─────────────────────────────────────────
-// @desc    Submit recharge request (merchant)
-// @route   POST /api/recharge
-// @access  merchant only
-// ─────────────────────────────────────────
+//
+// desc    Submit recharge request (merchant)
+// route   POST /api/recharge
+// access  merchant only
+//
 export const submitRecharge = async (req, res) => {
   const { price, rechargeType, currencyType, voucher } = req.body;
 
@@ -41,49 +41,101 @@ export const submitRecharge = async (req, res) => {
   });
 };
 
-// ─────────────────────────────────────────
-// @desc    Get all recharge requests (admin)
-// @route   GET /api/recharge
-// @access  superAdmin, merchantAdmin
-// ─────────────────────────────────────────
+//
+// desc    Get all recharge requests (admin)
+// route   GET /api/recharge
+// access  superAdmin, merchantAdmin
+//
+// export const getAllRecharges = async (req, res) => {
+//   const { status, page = 1, limit = 10 } = req.query;
+
+//   const filter = {};
+//   if (status !== undefined) filter.status = Number(status);
+
+//   // merchantAdmin only sees their referred merchants
+//   if (req.user.role === "merchantAdmin") {
+//     const referredMerchants = await Merchant.find({
+//       referrer: req.user._id,
+//     }).select("_id");
+//     filter.merchant = { $in: referredMerchants.map((m) => m._id) };
+//   }
+
+//   const total = await Recharge.countDocuments(filter);
+
+//   const recharges = await Recharge.find(filter)
+//     .populate({
+//       path: "merchant",
+//       select: "storeName merchantId",
+//     })
+//     .sort({ createdAt: -1 })
+//     .skip((page - 1) * limit)
+//     .limit(Number(limit));
+
+//   res.json({
+//     recharges,
+//     total,
+//     page: Number(page),
+//     pages: Math.ceil(total / limit),
+//   });
+// };
+
 export const getAllRecharges = async (req, res) => {
-  const { status, page = 1, limit = 10 } = req.query;
+  try {
+    const { status, page = 1, limit = 10 } = req.query;
 
-  const filter = {};
-  if (status !== undefined) filter.status = Number(status);
+    const filter = {};
 
-  // merchantAdmin only sees their referred merchants
-  if (req.user.role === "merchantAdmin") {
-    const referredMerchants = await Merchant.find({
-      referrer: req.user._id,
-    }).select("_id");
-    filter.merchant = { $in: referredMerchants.map((m) => m._id) };
+    // স্ট্রিং স্ট্যাটাসকে নাম্বারে ম্যাপ করা
+    if (status !== undefined && status !== "") {
+      if (status === "pending") {
+        filter.status = 0; // আপনার মডেল অনুযায়ী 0 = pending review
+      } else if (status === "approved") {
+        filter.status = 1; // 1 = approved
+      } else {
+        const numStatus = Number(status);
+        if (!isNaN(numStatus)) {
+          filter.status = numStatus;
+        }
+      }
+    }
+
+    // merchantAdmin logic
+    if (req.user.role === "merchantAdmin") {
+      // নিশ্চিত করুন Merchant মডেলটি এখানে ইমপোর্ট করা আছে
+      const referredMerchants = await Merchant.find({
+        referrer: req.user._id,
+      }).select("_id");
+      filter.merchant = { $in: referredMerchants.map((m) => m._id) };
+    }
+
+    const total = await Recharge.countDocuments(filter);
+
+    const recharges = await Recharge.find(filter)
+      .populate({
+        path: "merchant",
+        select: "storeName merchantId",
+      })
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(Number(limit));
+
+    res.json({
+      recharges,
+      total,
+      page: Number(page),
+      pages: Math.ceil(total / limit),
+    });
+  } catch (error) {
+    console.error("Recharge Fetch Error:", error);
+    res.status(500).json({ message: error.message });
   }
-
-  const total = await Recharge.countDocuments(filter);
-
-  const recharges = await Recharge.find(filter)
-    .populate({
-      path: "merchant",
-      select: "storeName merchantId",
-    })
-    .sort({ createdAt: -1 })
-    .skip((page - 1) * limit)
-    .limit(Number(limit));
-
-  res.json({
-    recharges,
-    total,
-    page: Number(page),
-    pages: Math.ceil(total / limit),
-  });
 };
 
-// ─────────────────────────────────────────
-// @desc    Get my recharge records (merchant)
-// @route   GET /api/recharge/my-records
-// @access  merchant only
-// ─────────────────────────────────────────
+//
+// desc    Get my recharge records (merchant)
+// route   GET /api/recharge/my-records
+// access  merchant only
+//
 export const getMyRecharges = async (req, res) => {
   const merchant = await Merchant.findOne({ user: req.user._id });
   if (!merchant) {
@@ -97,11 +149,11 @@ export const getMyRecharges = async (req, res) => {
   res.json(recharges);
 };
 
-// ─────────────────────────────────────────
-// @desc    Review recharge (approve/reject)
-// @route   PUT /api/recharge/:id/review
-// @access  superAdmin only
-// ─────────────────────────────────────────
+//
+// desc    Review recharge (approve/reject)
+// route   PUT /api/recharge/:id/review
+// access  superAdmin only
+//
 export const reviewRecharge = async (req, res) => {
   const { status } = req.body;
   // status: 1 = approved, 2 = rejected

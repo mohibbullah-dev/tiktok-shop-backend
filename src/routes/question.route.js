@@ -19,7 +19,8 @@ router.get("/:id", getQuestionById);
 // Admin only
 router.post("/seed", protect, authorize("superAdmin"), seedQuestions);
 router.post("/", protect, authorize("superAdmin"), createQuestion);
+router.get("/contract", protect, getContract);
 router.put("/:id", protect, authorize("superAdmin"), updateQuestion);
 router.delete("/:id", protect, authorize("superAdmin"), deleteQuestion);
-router.get("/contract", protect, getContract);
+
 export default router;
